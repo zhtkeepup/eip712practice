@@ -1,0 +1,4 @@
+mkdir contract
+cd contract/
+forge init --no-commit
+install OpenZeppelin/openzeppelin-contracts --no-commit
