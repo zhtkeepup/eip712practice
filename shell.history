@@ -2,3 +2,21 @@ mkdir contract
 cd contract/
 forge init --no-commit
 install OpenZeppelin/openzeppelin-contracts --no-commit
+
+##############################################
+
+mkdir javascript
+npm init
+npm install viem
+
+##############################################
+
+anvil --chain-id 1337
+
+##############################################
+
+forge script script/Eip712Practice.s.sol:Eip712PracticeScript --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast --rpc-url http://127.0.0.1:8545 --slow --via-ir --legacy
+
+
+
+

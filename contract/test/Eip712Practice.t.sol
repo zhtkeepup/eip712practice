@@ -9,10 +9,6 @@ contract TokenBankTest is Test {
     Eip712Practice public eip712Practice;
 
     address admin;
-    //
-    uint8 v;
-    bytes32 r;
-    bytes32 s;
 
     uint256 aPrivateKey;
 
@@ -28,19 +24,22 @@ contract TokenBankTest is Test {
 
     function test_permitDoSomething() public {
         vm.startPrank(admin);
+        uint256 nn1 = eip712Practice.number();
 
         permit = Eip712Practice.PermitData({
             signer: admin,
             message1: 778899,
-            message2: "hello world!",
+            message2: 112233,
             nonce: 0
         });
+
+        // hashing typed structured data
         bytes32 digest = eip712Practice.getTypedDataHash(permit);
 
-        (v, r, s) = vm.sign(aPrivateKey, digest);
+        // signing with private key and typed data hash.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(aPrivateKey, digest);
 
-        uint256 nn1 = eip712Practice.number();
-
+        // call smart contrat with signature
         eip712Practice.permitDoSomething(
             permit.signer,
             permit.message1,
@@ -48,6 +47,48 @@ contract TokenBankTest is Test {
             v,
             r,
             s
+        );
+        //
+        uint256 nn2 = eip712Practice.number();
+        assertEq(nn1 + 1, nn2);
+        console.log("number,", nn1, nn2);
+    }
+
+    function test_permit2DoSomething() public {
+        vm.startPrank(admin);
+        uint256 nn1 = eip712Practice.number();
+
+        permit = Eip712Practice.PermitData({
+            signer: admin,
+            message1: 778899,
+            message2: 112233,
+            nonce: 0
+        });
+
+        // hashing typed structured data
+        bytes32 digest = eip712Practice.getTypedDataHash(permit);
+
+        // signing with private key and typed data hash.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(aPrivateKey, digest);
+
+        bytes memory signature = new bytes(65); // 65 bytes for ECDSA signature
+        // Append r value
+        assembly {
+            mstore(add(signature, 0x20), r)
+        }
+        // Append s value
+        assembly {
+            mstore(add(signature, 0x40), s)
+        }
+        // Append v value
+        signature[64] = bytes1(v); // Since v is a single byte, we can directly assign it
+        console.logBytes(signature);
+        // call smart contrat with signature
+        eip712Practice.permit2DoSomething(
+            permit.signer,
+            permit.message1,
+            permit.message2,
+            signature
         );
         //
         uint256 nn2 = eip712Practice.number();

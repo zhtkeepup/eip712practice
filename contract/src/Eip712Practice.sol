@@ -11,13 +11,13 @@ contract Eip712Practice is EIP712, Nonces {
     struct PermitData {
         address signer;
         uint256 message1;
-        string message2;
+        uint256 message2;
         uint256 nonce;
     }
 
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256(
-            "eip712permit(address signer,uint256 message1,string message2,uint256 nonce)"
+            "eip712permit(address signer,uint256 message1,uint256 message2,uint256 nonce)"
         );
 
     string private constant SIGNING_DOMAIN_NAME = "Eip712Practice";
@@ -63,7 +63,7 @@ contract Eip712Practice is EIP712, Nonces {
     function eip712permit(
         address signer,
         uint256 message1,
-        string calldata message2,
+        uint256 message2,
         uint8 v,
         bytes32 r,
         bytes32 s
@@ -78,22 +78,57 @@ contract Eip712Practice is EIP712, Nonces {
         bytes32 hash = getTypedDataHash(pd);
 
         address recoveredSigner = ECDSA.recover(hash, v, r, s);
-        if (signer != recoveredSigner) {
-            revert ERC2612InvalidSigner(recoveredSigner, signer);
-        }
+        require(signer == recoveredSigner, "InvalidSigner.1.");
     }
 
-    event DoSomething(address signer, uint256 message1, string message2);
+    event DoSomething(address signer, uint256 message1, uint256 message2);
 
     function permitDoSomething(
         address signer,
         uint256 message1,
-        string calldata message2,
+        uint256 message2,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external {
         eip712permit(signer, message1, message2, v, r, s);
+        // do something...
+        number++;
+        emit DoSomething(signer, message1, message2);
+    }
+
+    ///////////////////////
+
+    function eip712permit2(
+        address signer,
+        uint256 message1,
+        uint256 message2,
+        bytes memory signature
+    ) private {
+        require(signature.length == 65, "Invalid signature.length");
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // ecrecover takes the signature parameters, and the only way to get them
+        // currently is to use assembly.
+        /// @solidity memory-safe-assembly
+        assembly {
+            r := mload(add(signature, 0x20))
+            s := mload(add(signature, 0x40))
+            v := byte(0, mload(add(signature, 0x60)))
+        }
+
+        eip712permit(signer, message1, message2, v, r, s);
+    }
+
+    function permit2DoSomething(
+        address signer,
+        uint256 message1,
+        uint256 message2,
+        bytes memory signature
+    ) external {
+        eip712permit2(signer, message1, message2, signature);
         // do something...
         number++;
         emit DoSomething(signer, message1, message2);
